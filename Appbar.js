@@ -1,0 +1,422 @@
+import React, { useState } from 'react';
+import { styled, useTheme, alpha } from '@mui/material/styles';
+import Box from '@mui/material/Box';
+import MuiDrawer from '@mui/material/Drawer';
+import MuiAppBar from '@mui/material/AppBar';
+import Toolbar from '@mui/material/Toolbar';
+import List from '@mui/material/List';
+import CssBaseline from '@mui/material/CssBaseline';
+import Typography from '@mui/material/Typography';
+import Divider from '@mui/material/Divider';
+import MenuIcon from '@mui/icons-material/Menu';
+import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import ListItem from '@mui/material/ListItem';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import InboxIcon from '@mui/icons-material/MoveToInbox';
+import MailIcon from '@mui/icons-material/Mail';
+import AccountCircleTwoToneIcon from '@mui/icons-material/AccountCircleTwoTone';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
+import SearchIcon from '@mui/icons-material/Search';
+import InputBase from '@mui/material/InputBase';
+import GraphWidget from './GraphWidget.js';
+import SettingsOutlinedIcon from '@mui/icons-material/SettingsOutlined';
+import Slider from '@mui/material/Slider';
+import Button from '@mui/material/Button';
+
+const drawerWidth = 170;
+
+const openedMixin = (theme) => ({
+  width: drawerWidth,
+  transition: theme.transitions.create('width', {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.enteringScreen,
+  }),
+  overflowX: 'hidden',
+});
+
+const closedMixin = (theme) => ({
+  transition: theme.transitions.create('width', {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  overflowX: 'hidden',
+  width: `calc(${theme.spacing(7)} + 1px)`,
+  [theme.breakpoints.up('sm')]: {
+    width: `calc(${theme.spacing(8)} + 1px)`,
+  },
+});
+
+const DrawerHeader = styled('div')(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'flex-end',
+  padding: theme.spacing(0, 1),
+  ...theme.mixins.toolbar,
+}));
+
+const AppBar = styled(MuiAppBar, {
+  shouldForwardProp: (prop) => prop !== 'open',
+})(({ theme, open }) => ({
+  zIndex: theme.zIndex.drawer + 1,
+  transition: theme.transitions.create(['width', 'margin'], {
+    easing: theme.transitions.easing.sharp,
+    duration: theme.transitions.duration.leavingScreen,
+  }),
+  ...(open && {
+    marginLeft: drawerWidth,
+    width: `calc(100% - ${drawerWidth}px)`,
+    transition: theme.transitions.create(['width', 'margin'], {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+  }),
+}));
+
+const Drawer = styled(MuiDrawer, { shouldForwardProp: (prop) => prop !== 'open' })(
+  ({ theme, open }) => ({
+    width: drawerWidth,
+    flexShrink: 0,
+    whiteSpace: 'nowrap',
+    boxSizing: 'border-box',
+    ...(open && {
+      ...openedMixin(theme),
+      '& .MuiDrawer-paper': {
+        ...openedMixin(theme),
+        backgroundColor: alpha(theme.palette.background.paper, 0.8),
+        backdropFilter: 'blur(10px)',
+      },
+    }),
+    ...(!open && {
+      ...closedMixin(theme),
+      '& .MuiDrawer-paper': {
+        ...closedMixin(theme),
+        backgroundColor: alpha(theme.palette.background.paper, 0.8),
+        backdropFilter: 'blur(10px)',
+      },
+    }),
+  }),
+);
+
+const SearchBar = () => {
+  const [search, setSearch] = React.useState('');
+  const [searchData, setSearchData] = React.useState([]);
+  const [selectedItem, setSelectedItem] = React.useState(-1);
+
+  const handleChange = (e) => {
+    setSearch(e.target.value);
+  };
+
+  const handleClose = () => {
+    setSearch('');
+    setSearchData([]);
+    setSelectedItem(-1);
+  };
+
+  const handleKeyDown = (e) => {
+    if (searchData.length > 0) {
+      if (e.key === 'ArrowUp' && selectedItem > 0) {
+        setSelectedItem((prev) => prev - 1);
+      } else if (e.key === 'ArrowDown' && selectedItem < searchData.length - 1) {
+        setSelectedItem((prev) => prev + 1);
+      } else if (e.key === 'Enter' && selectedItem >= 0) {
+        const url = searchData[selectedItem].show.url;
+        window.open(url, '_self');
+      } else {
+        setSelectedItem(-1);
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    if (search !== '') {
+      fetch(`https://api.tvmaze.com/search/shows?q=${search}`)
+        .then((res) => res.json())
+        .then((data) => {
+          const filteredData = data.filter(
+            (item) => item.show.name.toLowerCase().includes(search.toLowerCase())
+          );
+          setSearchData(filteredData);
+        })
+        .catch((error) => console.error('Error fetching data:', error));
+    } else {
+      setSearchData([]);
+    }
+  }, [search]);
+
+  return (
+    <Box sx={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
+      <InputBase
+        sx={{
+          ml: 1,
+          flex: 4,
+          border: '1px solid #000000',
+          borderRadius: '14px',
+          padding: '3px',
+          '&::placeholder': { color: '#FFFFFF' },
+          width: '220px',
+        }}
+        placeholder="Search..."
+        inputProps={{ 'aria-label': 'search' }}
+        onChange={handleChange}
+        value={search}
+        onKeyDown={handleKeyDown}
+      />
+      <IconButton type="submit" sx={{ p: '10px' }} aria-label="search">
+        {search === '' ? <SearchIcon /> : <CloseIcon onClick={handleClose} />}
+      </IconButton>
+      {searchData.length > 0 && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '100%',
+            right: 45,
+            bgcolor: 'background.paper',
+            zIndex: 1,
+            width: '200px',
+            maxHeight: '300px',
+            border: '1px solid #ccc',
+            borderRadius: '4px',
+            mt: 1.5,
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
+          }}
+        >
+          {searchData.slice(0, 8).map((data, index) => (
+            <a
+              href={data.show.url}
+              key={index}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block',
+                padding: '9px',
+                backgroundColor: selectedItem === index ? 'rgba(0,0,0,0.1)' : 'transparent',
+                textDecoration: 'none',
+                color: 'black',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+              onMouseEnter={() => setSelectedItem(index)}
+              onMouseLeave={() => setSelectedItem(-1)}
+            >
+              {data.show.name}
+            </a>
+          ))}
+        </Box>
+      )}
+    </Box>
+  );
+};
+
+export default function MiniDrawer() {
+  const theme = useTheme();
+  const [open, setOpen] = React.useState(false);
+  const [timeRange, setTimeRange] = React.useState([0, 1440]); // Initial time range in minutes
+  const [showTimeFilter, setShowTimeFilter] = useState(false);
+
+  const handleDrawerOpen = () => {
+    setOpen(true);
+  };
+
+  const handleDrawerClose = () => {
+    setOpen(false);
+  };
+
+  const handleSliderChange = (event, newValue) => {
+    setTimeRange(newValue);
+    // You can handle updating your data or performing actions based on the time range here
+  };
+
+  const handleToggleTimeFilter = () => {
+    setShowTimeFilter(!showTimeFilter);
+  };
+
+  const valueLabelFormat = (value) => {
+    const hours = Math.floor(value / 60);
+    const minutes = value % 60;
+    return `${hours}h ${minutes}m`;
+  };
+
+  const setTimeRangeByPeriod = (minutes) => {
+    setTimeRange([0, minutes]);
+  };
+
+  const generateMarks = () => {
+    const marks = [];
+    for (let i = 0; i <= 1440; i += 60) {
+      marks.push({ value: i, label: `${i / 60}h` });
+    }
+    return marks;
+  };
+
+  return (
+    <Box sx={{ display: 'flex' }}>
+      <CssBaseline />
+      <AppBar position="fixed" open={open} sx={{  backgroundColor:"#011322" }}>
+        <Toolbar>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            onClick={handleDrawerOpen}
+            edge="start"
+            sx={{
+              marginRight: 14,
+              ...(open && { display: 'none' }),
+            }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+            My Application
+          </Typography>
+          <SearchBar />
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={handleToggleTimeFilter}
+            sx={{ ml: 2 }}
+          >
+            Filter
+          </Button>
+	  </Toolbar>
+        {showTimeFilter && (
+          <Box sx={{ p: 2 }}>
+            <Slider
+              value={timeRange}
+              onChange={handleSliderChange}
+              valueLabelDisplay="auto"
+              valueLabelFormat={valueLabelFormat}
+              step={1}
+              min={0}
+              max={1440}
+              marks={generateMarks()}
+              aria-labelledby="time-slider"
+              sx={{
+                '& .MuiSlider-rail': {
+                  backgroundColor: '#000000',
+                },
+                '& .MuiSlider-track': {
+                  backgroundColor: '#FF0000',
+                },
+                '& .MuiSlider-thumb': {
+                  '&:hover, &.Mui-focusVisible': {
+                    boxShadow: '0px 0px 0px 8px rgba(63, 81, 181, 0.16)',
+                  },
+                  backgroundColor: '#006400',
+                },
+              }}
+            />
+            <Typography variant="body2">
+              Selected range: {valueLabelFormat(timeRange[0])} - {valueLabelFormat(timeRange[1])}
+            </Typography>
+
+	{showTimeFilter && (
+        <Box sx={{ display: 'flex', gap: '-90px', ml: 59 }}>
+  	<Button size="small" onClick={() => setTimeRangeByPeriod(1440)} sx={{ color: '#000000' , py: 0, px: 1}}>1D</Button>
+	<Button size="small" onClick={() => setTimeRangeByPeriod(43200)} sx={{ color: '#000000', py: 0, px: 1}}>1M</Button>
+  	<Button size="small" onClick={() => setTimeRangeByPeriod(525600)} sx={{ color: '#000000' }} >1Y</Button>
+  	<Button size="small" onClick={() => setTimeRangeByPeriod(1.577e+6)} sx={{ color: '#000000' }} >3Y</Button>
+	<Button size="small" onClick={() => setTimeRangeByPeriod(2.628e+6)} sx={{ color: '#000000' }} >5Y</Button>
+	<Button size="small" onClick={() => setTimeRangeByPeriod(1576800)} sx={{ color: '#000000' }} >ALL</Button>
+	</Box>
+          )}
+
+          </Box>
+        )}
+      </AppBar>
+      <Drawer variant="permanent" open={open}>
+        <DrawerHeader>
+          <IconButton onClick={handleDrawerClose}>
+            {theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+          </IconButton>
+        </DrawerHeader>
+        <Divider />
+        <List>
+          {['Inbox', 'Starred', 'Send email', 'Drafts'].map((text, index) => (
+            <ListItem key={text} disablePadding sx={{ display: 'block' }}>
+              <ListItemButton
+                sx={{
+                  minHeight: 20,
+                  justifyContent: open ? 'initial' : 'center',
+                  px: 2,
+                  ml: 0.5,
+                }}
+              >
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: open ? 2 : 'auto',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {index % 2 === 0 ? <InboxIcon /> : <MailIcon />}
+                </ListItemIcon>
+                <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <Divider sx={{ mt: 32.1 }} />
+        <List sx={{ mt: -1, mb: -1 }}>
+          {['My Profile'].map((text) => (
+            <ListItem key={text} disablePadding sx={{ display: 'block' }}>
+              <ListItemButton
+                sx={{
+                  minHeight: 10,
+                  justifyContent: open ? 'initial' : 'center',
+                  px: 1.5,
+                }}
+              >
+                <AccountCircleTwoToneIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: open ? 2 : 'auto',
+                    justifyContent: 'center',
+                    fontSize: 23,
+                    ml: 0.7,
+                  }}
+                />
+                <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+        <List sx={{ mt: -1, mb: -2 }}>
+          {['Settings'].map((text) => (
+            <ListItem key={text} disablePadding sx={{ display: 'block' }}>
+              <ListItemButton
+                sx={{
+                  minHeight: 20,
+                  justifyContent: open ? 'initial' : 'center',
+                  px: 1.5,
+                }}
+              >
+                <SettingsOutlinedIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: open ? 2 : 'auto',
+                    justifyContent: 'center',
+                    fontSize: 23,
+                    ml: 0.7,
+                  }}
+                />
+                <ListItemText primary={text} sx={{ opacity: open ? 1 : 0 }} />
+              </ListItemButton>
+            </ListItem>
+          ))}
+        </List>
+      </Drawer>
+      <Box component="main" sx={{ flexGrow: 1, p: 3 }}>
+        <DrawerHeader />
+        <Box>
+          <GraphWidget />
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
