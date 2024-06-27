@@ -6,7 +6,6 @@ import MoreVertIcon from '@mui/icons-material/MoreVert';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ArrowRightRoundedIcon from '@mui/icons-material/ArrowRightRounded';
-import Slider from '@mui/material/Slider';
 import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 
@@ -15,7 +14,6 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarEleme
 const GraphWidget = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [dropdownAnchorEl, setDropdownAnchorEl] = useState(null);
-  const [timeRange, setTimeRange] = useState([0, 6]); // Initial time range: January to July
   const openMenu = Boolean(anchorEl);
   const openDropdown = Boolean(dropdownAnchorEl);
 
@@ -30,10 +28,6 @@ const GraphWidget = () => {
 
   const handleDropdownClick = (event) => {
     setDropdownAnchorEl(event.currentTarget);
-  };
-
-  const handleSliderChange = (event, newValue) => {
-    setTimeRange(newValue);
   };
 
   const lineData = {
@@ -63,7 +57,7 @@ const GraphWidget = () => {
     borderRadius: '10px',
     padding: '10px',
     width: '600px',
-    height: '450px',
+    height: '400px',
     position: 'relative',
     boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)',
     backgroundColor: '#fff',
@@ -88,14 +82,6 @@ const GraphWidget = () => {
     position: 'absolute',
     top: '-5px',
     right: '0px',
-  };
-
-  const filteredData = {
-    labels: lineData.labels.slice(timeRange[0], timeRange[1] + 1),
-    datasets: lineData.datasets.map(dataset => ({
-      ...dataset,
-      data: dataset.data.slice(timeRange[0], timeRange[1] + 1),
-    })),
   };
 
   return (
@@ -146,29 +132,7 @@ const GraphWidget = () => {
           <MenuItem onClick={handleClose}>About</MenuItem>
         </Menu>
         <hr style={hrStyle} />
-        <Line data={filteredData} options={options} />
-        <Box sx={{ mt: 2, ml: 2, mr: 2 }}>
-          <Typography id="time-range-slider" gutterBottom>
-            Time Range
-          </Typography>
-          <Slider
-            value={timeRange}
-            onChange={handleSliderChange}
-            min={0}
-            max={6}
-            valueLabelDisplay="auto"
-            aria-labelledby="time-range-slider"
-            marks={[
-              { value: 0, label: 'January' },
-              { value: 1, label: 'February' },
-              { value: 2, label: 'March' },
-              { value: 3, label: 'April' },
-              { value: 4, label: 'May' },
-              { value: 5, label: 'June' },
-              { value: 6, label: 'July' },
-            ]}
-          />
-        </Box>
+        <Line data={lineData} options={options} />
       </div>
     </div>
   );
